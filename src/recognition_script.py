@@ -5,17 +5,18 @@ def escuchar_comando():
     with sr.Microphone() as source:
         print("Escuchando... di algo:")
         audio = recognizer.listen(source)
+
+    try:
         print("Reconociendo...")
-        try:
-            comando = recognizer.recognize_google(audio, language="es-ES")
-            print(f"Comando reconocido: {comando}")
-            return comando
-        except sr.UnknownValueError:
-            print("No pude entender lo que dijiste.")
-            return None
-        except sr.RequestError:
-            print("Error al conectar con el servicio de reconocimiento de voz.")
-            return None
+        comando = recognizer.recognize_google(audio, language="es-ES")
+        print(f"Comando reconocido: {comando}")
+        return comando
+    except sr.UnknownValueError:
+        print("No pude entender lo que dijiste.")
+        return ""
+    except sr.RequestError as e:
+        print(f"No se pudo conectar con el servicio de Google: {e}")
+        return ""
 
 if __name__ == "__main__":
     while True:

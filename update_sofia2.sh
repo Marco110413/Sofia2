@@ -1,43 +1,36 @@
 #!/bin/bash
 
-# Función para actualizar el archivo README.md
-actualizar_readme() {
-    echo "Actualizando el archivo README.md..."
-    cat <<EOF > README.md
-# Sofia2 - Proyecto de inteligencia artificial y reconocimiento de voz
+# Actualización de archivos de proyecto en Sofia2
 
-Este proyecto tiene como objetivo crear una aplicación que implemente un sistema de reconocimiento de voz y otras funcionalidades de inteligencia artificial.
+# 1. Actualizar el archivo README.md
+echo "Actualizando el archivo README.md..."
+cat <<EOF > README.md
+# Sofia2
+Proyecto de desarrollo de un asistente inteligente.
 
-## Requisitos
+## Descripción
+SOFIA es un asistente que usa reconocimiento de voz para ejecutar comandos y tareas.
 
-- Python 3.x
-- SpeechRecognition
-- PyAudio
-
-## Instalación
-
-1. Clona este repositorio
-2. Instala las dependencias con `pip install -r requirements.txt`
-3. Ejecuta el script `src/recognition_script.py` para probar el reconocimiento de voz.
+## Funcionalidades
+- Reconocimiento de voz
+- Ejecución de comandos de voz
 
 EOF
-    echo "README.md actualizado."
-}
 
-# Función para actualizar el archivo requirements.txt
-actualizar_requisitos() {
-    echo "Actualizando el archivo requirements.txt..."
-    cat <<EOF > requirements.txt
-SpeechRecognition==3.14.1
-PyAudio==0.2.14
+echo "README.md actualizado."
+
+# 2. Actualizar requirements.txt
+echo "Actualizando el archivo requirements.txt..."
+cat <<EOF > requirements.txt
+SpeechRecognition
+PyAudio
 EOF
-    echo "requirements.txt actualizado."
-}
 
-# Función para verificar y actualizar el script de reconocimiento de voz
-actualizar_script_reconocimiento() {
-    echo "Actualizando el script de reconocimiento de voz..."
-    cat <<EOF > src/recognition_script.py
+echo "requirements.txt actualizado."
+
+# 3. Actualizar el script de reconocimiento de voz
+echo "Actualizando el script de reconocimiento de voz..."
+cat <<EOF > src/recognition_script.py
 import speech_recognition as sr
 
 def escuchar_comando():
@@ -45,17 +38,18 @@ def escuchar_comando():
     with sr.Microphone() as source:
         print("Escuchando... di algo:")
         audio = recognizer.listen(source)
+
+    try:
         print("Reconociendo...")
-        try:
-            comando = recognizer.recognize_google(audio, language="es-ES")
-            print(f"Comando reconocido: {comando}")
-            return comando
-        except sr.UnknownValueError:
-            print("No pude entender lo que dijiste.")
-            return None
-        except sr.RequestError:
-            print("Error al conectar con el servicio de reconocimiento de voz.")
-            return None
+        comando = recognizer.recognize_google(audio, language="es-ES")
+        print(f"Comando reconocido: {comando}")
+        return comando
+    except sr.UnknownValueError:
+        print("No pude entender lo que dijiste.")
+        return ""
+    except sr.RequestError as e:
+        print(f"No se pudo conectar con el servicio de Google: {e}")
+        return ""
 
 if __name__ == "__main__":
     while True:
@@ -63,15 +57,10 @@ if __name__ == "__main__":
         if comando:
             print(f"Comando recibido: {comando}")
 EOF
-    echo "script de reconocimiento de voz actualizado."
-}
 
-# Llamando las funciones para actualizar los archivos
-actualizar_readme
-actualizar_requisitos
-actualizar_script_reconocimiento
+echo "script de reconocimiento de voz actualizado."
 
-# Commit y push al repositorio de GitHub
+# 4. Agregar, hacer commit y subir los cambios al repositorio
 echo "Agregando, haciendo commit y subiendo los cambios al repositorio..."
 git add .
 git commit -m "Actualización de README, requirements.txt y script de reconocimiento de voz"

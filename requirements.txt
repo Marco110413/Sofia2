@@ -1,2 +1,2 @@
-SpeechRecognition==3.14.1
-PyAudio==0.2.14
+SpeechRecognition
+PyAudio
