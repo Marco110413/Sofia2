@@ -1,2 +1,4 @@
-SpeechRecognition
-PyAudio
+speechrecognition
+pyaudio
+spacy
+nltk

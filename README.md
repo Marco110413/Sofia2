@@ -1,10 +1,10 @@
-# Sofia2
-Proyecto de desarrollo de un asistente inteligente.
+# Proyecto SOFIA2
 
-## Descripción
-SOFIA es un asistente que usa reconocimiento de voz para ejecutar comandos y tareas.
+Este es un proyecto de desarrollo de la aplicación SOFIA, una asistente virtual.
 
-## Funcionalidades
-- Reconocimiento de voz
-- Ejecución de comandos de voz
+## Nuevas funcionalidades
+
+- **Saludos**: Ahora Sofía puede reconocer y responder a saludos como "Hola", "Buenos días", "Buenas tardes", etc.
+- **Preguntas**: Sofía reconoce preguntas y responde a ellas de manera adecuada.
+- **Conversación**: Sofía puede seguir una conversación y hacer preguntas adicionales o simplemente interactuar de manera fluida.
 
