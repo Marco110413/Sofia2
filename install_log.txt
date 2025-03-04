@@ -1,0 +1,8 @@
+Collecting web3
+  Downloading web3-7.8.0-py3-none-any.whl.metadata (5.5 kB)
+Collecting eth-abi>=5.0.1 (from web3)
+  Downloading eth_abi-5.2.0-py3-none-any.whl.metadata (3.8 kB)
+Collecting eth-account>=0.13.1 (from web3)
+  Downloading eth_account-0.13.5-py3-none-any.whl.metadata (3.8 kB)
+Collecting eth-hash>=0.5.1 (from eth-hash[pycryptodome]>=0.5.1->web3)
+  Downloading eth_hash-0.7.1-py3-none-any.whl.metadata (4.2 kB)

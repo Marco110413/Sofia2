@@ -1,0 +1,6 @@
+bash /data/data/com.termux/files/home/scripts-automatizacion/subir_scripts.sh
+bash /data/data/com.termux/files/home/subir_todo_git.sh
+export API_KEY=mzmFO4LbG5BWZb217tiUKdLLDpqYgGHYLDe5SXZyzNV2rXj5bNKX3pN2rsUbjwkR>> ~/.bashrc
+echo export SECRET_KEY=SsR71uOlrhEW90ZFrfPW1ZnXsT7HHBVZp86gfk2dMYAw59OIZS4ar3u4zuIxw4Bq
+export API_KEY="mzmFO4LbG5BWZb217tiUKdLLDpqYgGHYLDe5SXZyzNV2rXj5bNKX3pN2rsUbjwkR"
+export SECRET_KEY="SsR71uOlrhEW90ZFrfPW1ZnXsT7HHBVZp86gfk2dMYAw59OIZS4ar3u4zuIxw4Bq"
