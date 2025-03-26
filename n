@@ -1,0 +1,117 @@
+#!/bin/bash
+
+# Archivos JSON donde se guardan datos
+DB_USUARIOS="usuarios.json"
+DB_TOKENS="tokens.json"
+DB_RETIROS="retiros.json"
+DB_HISTORIAL="historial.json"
+
+# Función para registrar usuarios
+registrar_usuario() {
+    echo "🔹 Registro de Usuario"
+    read -p "Ingrese nombre de usuario: " usuario
+    read -p "Ingrese su clave: " clave
+    echo "{ \"usuario\": \"$usuario\", \"clave\": \"$clave\", \"tokens\": 0 }" >> "$DB_USUARIOS"
+    echo "✅ Usuario registrado con éxito."
+}
+
+# Función para asignar tokens
+asignar_tokens() {
+    echo "🔹 Asignación de Tokens"
+    read -p "Nombre de usuario: " usuario
+    read -p "Cantidad de bits utilizados: " bits
+
+    tokens_actuales=$(jq -r ".[] | select(.usuario==\"$usuario\") | .tokens" "$DB_TOKENS")
+    if [ -z "$tokens_actuales" ] || [ "$tokens_actuales" == "null" ]; then
+        echo "❌ Usuario no encontrado."
+        return
+    fi
+
+    nuevos_tokens=$((tokens_actuales + (bits / 1000)))
+    jq "map(if .usuario == \"$usuario\" then .tokens = $nuevos_tokens else . end)" "$DB_TOKENS" > temp.json && mv temp.json "$DB_TOKENS"
+    echo "✅ Tokens actualizados: $nuevos_tokens"
+}
+
+# Función para convertir tokens a criptomonedas
+convertir_tokens() {
+    echo "🔹 Conversión de Tokens a Criptomonedas"
+    read -p "Nombre de usuario: " usuario
+    read -p "Cantidad de tokens a convertir: " cantidad
+    echo "Opciones disponibles: 1) USDT  2) BNB  3) ETH  4) BTC"
+    read -p "Seleccione una opción: " opcion
+
+    moneda=""
+    case $opcion in
+        1) moneda="USDT" ;;
+        2) moneda="BNB" ;;
+        3) moneda="ETH" ;;
+        4) moneda="BTC" ;;
+        *) echo "❌ Opción inválida"; return ;;
+    esac
+
+    tokens_actuales=$(jq -r ".[] | select(.usuario==\"$usuario\") | .tokens" "$DB_TOKENS")
+    if [ "$cantidad" -gt "$tokens_actuales" ]; then
+        echo "❌ No tienes suficientes tokens."
+        return
+    fi
+
+    nuevos_tokens=$((tokens_actuales - cantidad))
+    jq "map(if .usuario == \"$usuario\" then .tokens = $nuevos_tokens else . end)" "$DB_TOKENS" > temp.json && mv temp.json "$DB_TOKENS"
+
+    echo "{ \"usuario\": \"$usuario\", \"tokens\": \"$cantidad\", \"moneda\": \"$moneda\", \"estado\": \"pendiente\" }" >> "$DB_RETIROS"
+    echo "✅ Conversión en proceso. Esperando aprobación."
+}
+
+# Función para aprobar/rechazar retiros automáticamente
+aprobar_retiro() {
+    echo "🔹 Aprobación Automática de Retiros"
+
+    while IFS= read -r line; do
+        usuario=$(echo "$line" | jq -r '.usuario')
+        cantidad=$(echo "$line" | jq -r '.tokens')
+        moneda=$(echo "$line" | jq -r '.moneda')
+        
+        # Simulación de aprobación automática (puedes conectar con Binance aquí)
+        echo "✅ Retiro aprobado para $usuario: $cantidad $moneda"
+
+        jq "map(if .usuario == \"$usuario\" and .estado == \"pendiente\" then .estado = \"aprobado\" else . end)" "$DB_RETIROS" > temp.json && mv temp.json "$DB_RETIROS"
+        
+        # Guardar en historial
+        echo "{ \"usuario\": \"$usuario\", \"cantidad\": \"$cantidad\", \"moneda\": \"$moneda\", \"fecha\": \"$(date)\" }" >> "$DB_HISTORIAL"
+    done < <(jq -c '.[] | select(.estado == "pendiente")' "$DB_RETIROS")
+
+    echo "🔹 Todos los retiros pendientes han sido procesados."
+}
+
+# Función para ver historial de transacciones
+ver_historial() {
+    echo "🔹 Historial de Transacciones"
+    jq '.' "$DB_HISTORIAL"
+}
+
+# Función principal del menú
+menu() {
+    while true; do
+        echo "📌 MENÚ PRINCIPAL"
+        echo "1️⃣ Registrar usuario"
+        echo "2️⃣ Asignar tokens"
+        echo "3️⃣ Convertir tokens a criptomonedas"
+        echo "4️⃣ Aprobar/rechazar retiros automáticamente"
+        echo "5️⃣ Ver historial de transacciones"
+        echo "6️⃣ Salir"
+        read -p "Seleccione una opción: " opcion
+
+        case $opcion in
+            1) registrar_usuario ;;
+            2) asignar_tokens ;;
+            3) convertir_tokens ;;
+            4) aprobar_retiro ;;
+            5) ver_historial ;;
+            6) echo "👋 Saliendo..."; exit ;;
+            *) echo "❌ Opción inválida" ;;
+        esac
+    done
+}
+
+# Iniciar el menú
+menu

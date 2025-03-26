@@ -1,125 +1,500 @@
+        mkdir -p "$ruta_proyecto"
+        dialog --msgbox "Proyecto '$nombre_proyecto' creado en '$ruta_proyecto'." 6 40
+    fi
+}
+
+# Función para listar proyectos existentes
+listar_proyectos() {
+    proyectos=$(ls "$BASE_DIR")
+    if [ -z "$proyectos" ]; then
+        dialog --msgbox "No hay proyectos disponibles." 6 40
+    else
+        dialog --title "Proyectos Existentes" --msgbox "$proyectos" 15 50
+    fi
+}
+
+# Función para seleccionar un proyecto
+seleccionar_proyecto() {
+    proyectos=$(ls "$BASE_DIR")
+    if [ -z "$proyectos" ]; then
+        dialog --msgbox "No hay proyectos disponibles para seleccionar." 6 40
+    else
+        dialog --title "Seleccionar Proyecto" \
+               --menu "Elija un proyecto:" 15 50 10 $(echo "$proyectos" | nl -w2 -s' ') 2> proyecto_seleccionado.txt
+        seleccion=$(<proyecto_seleccionado.txt)
+        rm -f proyecto_seleccionado.txt
+        nombre_proyecto=$(echo "$proyectos" | sed -n33
 #!/bin/bash
-echo "🚀 Iniciando ejecución automática de los pasos de la lista principal..."
-# Verificar que Git esté instalado
-while ! command -v git &> /dev/null; do     echo "⚠️ Git no está instalado. Intentando instalar...";     pkg install -y git || { echo "❌ Error al instalar Git. Reintentando..."; sleep 3; }; done
-echo "✅ Git está instalado."
-# Verificar si estamos en un repositorio Git
-while ! git rev-parse --is-inside-work-tree &> /dev/null; do     echo "❌ No estás en un repositorio de Git. Ingresa la ruta:";     read -p "📂 Ruta del repositorio: " REPO_PATH;     cd "$REPO_PATH" || { echo "❌ Ruta no válida. Intenta de nuevo."; sleep 3; }; done
-echo "✅ Estás en un repositorio de Git."
-# Lista de pasos principales (aquí puedes definir 110 pasos o más)
-PASOS=(     "git pull"     "git fetch --all"     "git reset --hard origin/main"     "git clean -fd"     "git gc --auto"     "git fsck --full"
-)
-# Ejecutar cada paso en un bucle
-for PASO in "${PASOS[@]}"; do     echo "🔄 Ejecutando: $PASO";     $PASO;     if [ $? -ne 0 ]; then         echo "❌ Error en: $PASO. Aplicando solución automática...";         sleep 2;     else         echo "✅ Completado: $PASO";     fi; done
-echo "🚀 Todos los pasos de la lista principal han sido ejecutados correctamente."
-nano token_script.sh
-chmod +x token_script.sh
-./token_script.sh
-pkg update && pkg upgrade -y
-pkg install iproute2 -y
-rm token_script.sh
-nano token_script.sh
-./token_script.sh
-ls -l token_script.sh
-chmod +x token_script.sh
-./token_script.sh
-ip link show
-chmod +x sofia_monitor.sh
+# Archivo para almacenar las credenciales de GitHub
+CREDENTIALS_FILE="$HOME/.github_credentials"
+# Directorio base de proyectos
+BASE_DIR="$HOME/proyectos"
+# Asegura que el directorio base exista
+mkdir -p "$BASE_DIR"
+# Función para solicitar y almacenar credenciales de GitHub
+solicitar_credenciales() {
+    dialog --title "Nombre de usuario de GitHub"            --inputbox "Por favor, ingrese su nombre de usuario de GitHub:" 8 40 2> nombre_usuario.txt;     NOMBRE_USUARIO=$(<nombre_usuario.txt);     rm -f nombre_usuario.txt; 
+    dialog --title "Token Personal de Acceso de GitHub"            --inputbox "Por favor, ingrese su token personal de acceso de GitHub:" 8 40 2> token_acceso.txt;     TOKEN_ACCESO=$(<token_acceso.txt);     rm -f token_acceso.txt; 
+    echo "$NOMBRE_USUARIO:$TOKEN_ACCESO" > "$CREDENTIALS_FILE";     chmod 600 "$CREDENTIALS_FILE"; }
+# Función para cargar credenciales de GitHub
+cargar_credenciales() {     if [ -f "$CREDENTIALS_FILE" ]; then         IFS=':' read -r NOMBRE_USUARIO TOKEN_ACCESO < "$CREDENTIALS_FILE";     else         solicitar_credenciales;     fi; }
+# Función para crear un nuevo proyecto
+crear_proyecto() {     dialog --title "Crear Nuevo Proyecto"            --inputbox "Ingrese el nombre del nuevo proyecto:" 8 40 2> nombre_proyecto.txt;     nombre_proyecto=$(<nombre_proyecto.txt);     rm -f nombre_proyecto.txt; 
+    nombre_proyecto=${nombre_proyecto// /_};     ruta_proyecto="$BASE_DIR/$nombre_proyecto";      if [ -d "$ruta_proyecto" ]; then         dialog --msgbox "El proyecto '$nombre_proyecto' ya existe." 6 40;     else         mkdir -p "$ruta_proyecto";         dialog --msgbox "Proyecto '$nombre_proyecto' creado en '$ruta_proyecto'." 6 40;     fi; }
+# Función para listar proyectos existentes
+listar_proyectos() {     proyectos=$(ls "$BASE_DIR");     if [ -z "$proyectos" ]; then         dialog --msgbox "No hay proyectos disponibles." 6 40;     else         dialog --title "Proyectos Existentes" --msgbox "$proyectos" 15 50;     fi; }
+# Función para seleccionar un proyecto
+seleccionar_proyecto() {     proyectos=$(ls "$BASE_DIR");     if [ -z "$proyectos" ]; then         dialog --msgbox "No hay proyectos disponibles para seleccionar." 6 40;     else         dialog --title "Seleccionar Proyecto"                --menu "Elija un proyecto:" 15 50 10 $(echo "$proyectos" | nl -w2 -s' ') 2> proyecto_seleccionado.txt;         seleccion=$(<proyecto_seleccionado.txt);         rm -f proyecto_seleccionado.txt;         nombre_proyecto=$(echo "$proyectos" | sed -n33
 #!/bin/bash
-# Variables
-USER_FILE="usuarios.txt"
-TOKENS_FILE="tokens.txt"
-# Función para registrar usuario
-registrar_usuario() {     read -p "Ingresa tu nombre de usuario: " usuario;     if grep -q "^$usuario$" "$USER_FILE" 2>/dev/null; then         echo "⚠️ Usuario ya registrado.";     else         echo "$usuario" >> "$USER_FILE";         echo "$usuario 0" >> "$TOKENS_FILE";         echo "✅ Usuario registrado exitosamente.";     fi; }
-# Función para ver tokens
-ver_tokens() {     read -p "Ingresa tu nombre de usuario: " usuario;     tokens=$(grep "^$usuario " "$TOKENS_FILE" | awk '{print $2}');     if [ -z "$tokens" ]; then         echo "⚠️ Usuario no encontrado.";     else         echo "🎖️ Tokens ganados: $tokens";     fi; }
-# Función para monitorear datos
-monitorear_datos() {     echo "✅ Monitoreo iniciado en segundo plano.";     while true; do         WIFI_BYTES=$(cat /sys/class/net/wlan0/statistics/rx_bytes 2>/dev/null || echo 0);         MOVIL_BYTES=$(cat /sys/class/net/rmnet0/statistics/rx_bytes 2>/dev/null || echo 0);         TOTAL_BYTES=$((WIFI_BYTES + MOVIL_BYTES));          echo "📡 WiFi: $WIFI_BYTES bytes | 📶 Móvil: $MOVIL_BYTES bytes | 🔄 Total: $TOTAL_BYTES bytes";         sleep 5;     done; }
-# Menú de opciones
-while true; do     echo -e "\nOPCIONES:";     echo "1️⃣ Registrar usuario";     echo "2️⃣ Ver tokens ganados";     echo "3️⃣ Iniciar monitoreo automático";     echo "4️⃣ Salir";          read -p "Selecciona una opción: " opcion;      case $opcion in         1) registrar_usuario ;;         2) ver_tokens ;;         3) monitorear_datos ;;         4) echo "👋 Saliendo..."; exit ;;         *) echo "❌ Opción no válida. Intenta de nuevo." ;;     esac; done
-#!/bin/bash
-# Archivo donde se guardan los usuarios (email, contraseña hasheada y tokens)
-USER_FILE="usuarios.txt"
-# Función para registrar un usuario
-registrar_usuario() {     echo "🔹 Registro de usuario";     read -p "📧 Ingresa tu email: " email;     grep -q "^$email|" $USER_FILE 2>/dev/null;     if [ $? -eq 0 ]; then         echo "⚠️ El email ya está registrado.";         return;     fi;      read -s -p "🔑 Ingresa una contraseña: " password;     echo;     hashed_password=$(echo -n "$password" | sha256sum | awk '{print $1}');     echo "$email|$hashed_password|0" >> $USER_FILE;     echo "✅ Usuario registrado con éxito."; }
-# Función para iniciar sesión
-iniciar_sesion() {     echo "🔹 Inicio de sesión";     read -p "📧 Ingresa tu email: " email;     read -s -p "🔑 Ingresa tu contraseña: " password;     echo;     hashed_password=$(echo -n "$password" | sha256sum | awk '{print $1}');      user_data=$(grep "^$email|" $USER_FILE 2>/dev/null);     if [ -z "$user_data" ]; then         echo "⚠️ Usuario no encontrado.";         return;     fi;      stored_password=$(echo "$user_data" | cut -d '|' -f2);     if [ "$hashed_password" == "$stored_password" ]; then         echo "✅ Inicio de sesión exitoso. ¡Bienvenido!";     else         echo "❌ Contraseña incorrecta.";     fi; }
-# Función para recuperar contraseña (muestra el hash, no es seguro en producción)
-recuperar_contraseña() {     echo "🔹 Recuperación de contraseña";     read -p "📧 Ingresa tu email: " email;     user_data=$(grep "^$email|" $USER_FILE 2>/dev/null);      if [ -z "$user_data" ]; then         echo "⚠️ Usuario no encontrado.";         return;     fi;      echo "⚠️ No podemos recuperar la contraseña por seguridad.";     echo "📌 Si olvidaste tu contraseña, puedes crear una nueva contactando soporte."; }
-# Función para eliminar usuario
-eliminar_usuario() {     echo "🔹 Eliminar usuario";     read -p "📧 Ingresa tu email: " email;     read -s -p "🔑 Ingresa tu contraseña: " password;     echo;     hashed_password=$(echo -n "$password" | sha256sum | awk '{print $1}');      user_data=$(grep "^$email|" $USER_FILE 2>/dev/null);     if [ -z "$user_data" ]; then         echo "⚠️ Usuario no encontrado.";         return;     fi;      stored_password=$(echo "$user_data" | cut -d '|' -f2);     if [ "$hashed_password" == "$stored_password" ]; then         grep -v "^$email|" $USER_FILE > temp.txt && mv temp.txt $USER_FILE;         echo "✅ Usuario eliminado con éxito.";     else         echo "❌ Contraseña incorrecta.";     fi; }
+# Archivo para almacenar las credenciales de GitHub
+CREDENTIALS_FILE="$HOME/.github_credentials"
+# Directorio base de proyectos
+BASE_DIR="$HOME/proyectos"
+# Asegura que el directorio base exista
+mkdir -p "$BASE_DIR"
+# Función para solicitar y almacenar credenciales de GitHub
+solicitar_credenciales() {
+    dialog --title "Nombre de usuario de GitHub"            --inputbox "Por favor, ingrese su nombre de usuario de GitHub:" 8 40 2> nombre_usuario.txt;     NOMBRE_USUARIO=$(<nombre_usuario.txt);     rm -f nombre_usuario.txt; 
+    dialog --title "Token Personal de Acceso de GitHub"            --inputbox "Por favor, ingrese su token personal de acceso de GitHub:" 8 40 2> token_acceso.txt;     TOKEN_ACCESO=$(<token_acceso.txt);     rm -f token_acceso.txt; 
+    echo "$NOMBRE_USUARIO:$TOKEN_ACCESO" > "$CREDENTIALS_FILE";     chmod 600 "$CREDENTIALS_FILE"; }
+# Función para cargar credenciales de GitHub
+cargar_credenciales() {     if [ -f "$CREDENTIALS_FILE" ]; then         IFS=':' read -r NOMBRE_USUARIO TOKEN_ACCESO < "$CREDENTIALS_FILE";     else         solicitar_credenciales;     fi; }
+# Función para crear un nuevo proyecto
+crear_proyecto() {     dialog --title "Crear Nuevo Proyecto"            --inputbox "Ingrese el nombre del nuevo proyecto:" 8 40 2> nombre_proyecto.txt;     nombre_proyecto=$(<nombre_proyecto.txt);     rm -f nombre_proyecto.txt; 
+    nombre_proyecto=${nombre_proyecto// /_};     ruta_proyecto="$BASE_DIR/$nombre_proyecto";      if [ -d "$ruta_proyecto" ]; then         dialog --msgbox "El proyecto '$nombre_proyecto' ya existe." 6 40;     else         mkdir -p "$ruta_proyecto";         dialog --msgbox "Proyecto '$nombre_proyecto' creado en '$ruta_proyecto'." 6 40;     fi; }
+# Función para listar proyectos existentes
+listar_proyectos() {     proyectos=$(ls "$BASE_DIR");     if [ -z "$proyectos" ]; then         dialog --msgbox "No hay proyectos disponibles." 6 40;     else         dialog --title "Proyectos Existentes" --msgbox "$proyectos" 15 50;     fi; }
+# Función para seleccionar un proyecto
+seleccionar_proyecto() {     proyectos=$(ls "$BASE_DIR");     if [ -z "$proyectos" ]; then         dialog --msgbox "No hay proyectos disponibles para seleccionar." 6 40;     else         dialog --title "Seleccionar Proyecto"                --menu "Elija un proyecto:" 15 50 10 $(echo "$proyectos" | nl -w2 -s' ') 2> proyecto_seleccionado.txt;         seleccion=$(<proyecto_seleccionado.txt);         rm -f proyecto_seleccionado.txt;         nombre_proyecto=$(echo "$proyectos" | sed -n "${seleccion}p");         ruta_proyecto="$BASE_DIR/$nombre_proyecto";         dialog --msgbox "Proyecto seleccionado: $nombre_proyecto" 6 40;     fi; }
+# Función para eliminar un proyecto
+eliminar_proyecto() {     proyectos=$(ls "$BASE_DIR");     if [ -z "$proyectos" ]; then         dialog --msgbox "No hay proyectos disponibles para eliminar." 6 40;     else         dialog --title "Eliminar Proyecto"                --menu "Elija un proyecto para eliminar:" 15 50 10 $(echo "$proyectos" | nl -w2 -s' ') 2> proyecto_eliminar.txt;         seleccion=$(<proyecto_eliminar.txt);         rm -f proyecto_eliminar.txt;         nombre_proyecto=$(echo "$proyectos" | sed -n "${seleccion}p");         ruta_proyecto="$BASE_DIR/$nombre_proyecto";         rm -rf "$ruta_proyecto";         dialog --msgbox "Proyecto '$nombre_proyecto' eliminado." 6 40;     fi; }
+# Función para crear un APK de un proyecto seleccionado
+crear_apk() {     if [ -z "$ruta_proyecto" ]; then         dialog --msgbox "Primero seleccione un proyecto." 6 40;         return;     fi; 
+    apk_file="$ruta_proyecto/$nombre_proyecto.apk";     touch "$apk_file"; 
+    zipalign -v -p 4 "$apk_file" "$apk_file.aligned";     mv "$apk_file.aligned" "$apk_file";     apksigner sign --ks my-release-key.jks --out "$apk_file.signed" "$apk_file";     mv "$apk_file.signed" "$apk_file";      dialog --msgbox "APK creado y firmado: $apk_file" 6 40; }
+# Cargar credenciales al inicio
+cargar_credenciales
 # Menú principal
-while true; do     echo -e "\n📌 OPCIONES:";     echo "1️⃣ Registrar usuario";     echo "2️⃣ Iniciar sesión";     echo "3️⃣ Recuperar contraseña";     echo "4️⃣ Eliminar usuario";     echo "5️⃣ Salir";     read -p "Selecciona una opción: " opcion;      case $opcion in         1) registrar_usuario ;;         2) iniciar_sesion ;;         3) recuperar_contraseña ;;         4) eliminar_usuario ;;         5) echo "👋 Saliendo..."; exit ;;         *) echo "❌ Opción inválida." ;;     esac; done
+while true; do     dialog --title "Gestor de Proyectos"            --menu "Seleccione una opción:" 15 50 6            1 "Crear un nuevo proyecto"            2 "Listar proyectos existentes"            3 "Seleccionar un proyecto"            4 "Eliminar un proyecto"            5 "Crear APK del proyecto seleccionado"            6 "Salir" 2> menu_opcion.txt;      opcion=$(<menu_opcion.txt);     rm -18;  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
+bash gestor_proyectos.sh
+ls -l $HOME/gestor_proyectos.sh
+nano $HOME/gestor_proyectos.sh
+chmod +x $HOME/gestor_proyectos.sh
+bash $HOME/gestor_proyectos.sh
+nano $HOME/gestor_proyectos.sh
+rm -f $HOME/gestor_proyectos.sh
+rm -rf $HOME/proyectos
+nano $HOME/gestor_proyectos.sh
+chmod +x $HOME/gestor_proyectos.sh
+bash $HOME/gestor_proyectos.sh
+rm -f $HOME/gestor_proyectos.sh
+rm -rf $HOME/proyectos
+nano $HOME/gestor_proyectos.sh
+chmod +x $HOME/gestor_proyectos.sh
+echo "bash $HOME/gestor_proyectos.sh" >> $HOME/.bashrc
+bash $HOME/gestor_proyectos.sh
+rm -f $HOME/gestor_proyectos.sh
+rm -rf $HOME/proyectos
+nano $HOME/gestor_proyectos.sh
+chmod +x $HOME/gestor_proyectos.sh
+bash $HOME/gestor_proyectos.sh
+rm -f $HOME/gestor_proyectos.sh
+rm -rf $HOME/proyectos
+nano $HOME/gestor_proyectos.sh
+chmod +x $HOME/gestor_proyectos.sh
+bash $HOME/gestor_proyectos.sh
+rm -f $HOME/gestor_proyectos.sh
+rm -rf $HOME/proyectos
+nano $HOME/gestor_proyectos.sh
+chmod +x $HOME/gestor_proyectos.sh
+bash $HOME/gestor_proyectos.sh
+rm -f $HOME/gestor_proyectos.sh
+rm -rf $HOME/proyectos
+nano $HOME/gestor_proyectos.sh
+chmod +x $HOME/gestor_proyectos.sh
+bash $HOME/gestor_proyectos.sh
+rm -f $HOME/gestor_proyectos.sh
+rm -rf $HOME/proyectos
+nano $HOME/gestor_proyectos.sh
+chmod +x $HOME/gestor_proyectos.sh
+bash $HOME/gestor_proyectos.sh
+rm -rf $HOME/proyectos
+rm -f $HOME/gestor_proyectos.sh
+nano $HOME/gestor_proyectos.sh
+chmod +x $HOME/gestor_proyectos.sh
+bash $HOME/gestor_proyectos.sh
+rm -rf $HOME/proyectos
+rm -f $HOME/gestor_proyectos.sh
+nano $HOME/gestor_proyectos.sh
+chmod +x $HOME/gestor_proyectos.sh
+bash $HOME/gestor_proyectos.sh
+rm -f $HOME/gestor_proyectos.sh
+nano $HOME/gestor_proyectos.sh
+chmod +x $HOME/gestor_proyectos.sh
+bash $HOME/gestor_proyectos.sh
+rm -f $HOME/gestor_proyectos.sh
+rm -rf $HOME/proyectos
+nano $HOME/gestor_proyectos.sh
+chmod +x $HOME/gestor_proyectos.sh
+bash $HOME/gestor_proyectos.sh
+rm -f $HOME/gestor_proyectos.sh
+rm -rf $HOME/proyectos
+nano $HOME/gestor_proyectos.sh
+chmod +x $HOME/gestor_proyectos.sh
+bash $HOME/gestor_proyectos.sh
+rm -rf ~/proyectos
+rm -f gestor_proyectos.sh
+bash gestor_proyectos.sh      # Iniciar el gestor de proyectos  
+chmod +x gestor_proyectos.sh  # Dar permisos de ejecución  
+nano gestor_proyectos.sh      # Editar el script  
+rm -rf ~/proyectos            # Eliminar todos los proyectos  
+ls ~/proyectos                # Listar proyectos disponibles
+rm -rf ~/proyectos            # Eliminar todos los proyectos  
+nano gestor_proyectos.sh
+rm -f gestor_proyectos.sh
+nano gestor_proyectos.sh
+chmod +x gestor_proyectos.sh
+bash gestor_proyectos.sh
+rm -rf ~/proyectos    # Eliminar proyectos antiguos  
+rm -f gestor_proyectos.sh  # Eliminar script anterior  
+nano gestor_proyectos.sh  # Crear un nuevo script
+chmod +x gestor_proyectos.sh
+bash gestor_proyectos.sh
+rm -f gestor_proyectos.sh  # Eliminar script anterior  
+bash gestor_proyectos.sh
+nano gestor_proyectos.sh  # Crear un nuevo script
+chmod +x ~/gestor_proyectos.sh
+bash ~/gestor_proyectos.sh
+nano ~/proyectos/tu_proyecto/archivo.sh
+rm -f gestor_proyectos.sh  # Eliminar script anterior  
+nano ~/proyectos/tu_proyecto/archivo.sh
+rm -f gestor_proyectos.sh  # Eliminar script anterior  
+nano ~/proyectos/tu_proyecto/archivo.sh
+rm -rf ~/proyectos
+rm -f ~/gestor_proyectos.sh
+nano ~/gestor_proyectos.sh
+chmod +x ~/gestor_proyectos.sh
+bash ~/gestor_proyectos.sh
+rm -rf ~/proyectos
+rm -f ~/gestor_proyectos.sh
+nano ~/gestor_proyectos.sh
+chmod +x ~/gestor_proyectos.sh
+bash ~/gestor_proyectos.sh
+rm -rf ~/proyectos
+rm -f ~/gestor_proyectos.sh
+nano ~/gestor_proyectos.sh
+chmod +x ~/gestor_proyectos.sh
+bash ~/gestor_proyectos.sh
+
+bash ~/gestor_proyectos.sh
+export BINANCE_API_KEY=xFXov9gttcxNEXtLwJ5LMkz7kGci7vEpQR841XlfUgwAXSLwPd2dOX4UH11CIc0X
+export BINANCE_SECRET_KEY=TIRPvXfyBhAtPv4YV23CoxUcLAG4apUocRgJohbdNevJFExmZLQNRsxHYRiAqiHK
+bash
+bash
+ls
+rm -f ~/gestor_proyectos.sh
+nano ~/gestor_proyectos.sh
+bash ~/gestor_proyectos.sh
+rm -f ~/gestor_proyectos.sh
+bash ~/gestor_proyectos.sh
+nano ~/gestor_proyectos.sh
+bash ~/gestor_proyectos.sh
+rm -f ~/gestor_proyectos.sh
+nano ~/gestor_proyectos.sh
+bash ~/gestor_proyectos.sh
+rm -f ~/gestor_proyectos.sh
+nano ~/gestor_proyectos.sh
+bash ~/gestor_proyectos.sh
+rm -f ~/gestor_proyectos.sh
+nano ~/gestor_proyectos.sh
+bash ~/gestor_proyectos.sh
+5
+rm -f ~/gestor_proyectos.sh
+nano ~/gestor_proyectos.sh
+bash ~/gestor_proyectos.sh
+rm -f ~/gestor_proyectos.sh
+nano ~/gestor_proyectos.sh
+bash ~/gestor_proyectos.sh
+rm -f ~/gestor_proyectos.sh
+nano ~/gestor_proyectos.sh
+bash ~/gestor_proyectos.sh
+rm -f ~/gestor_proyectos.sh
+nano ~/gestor_proyectos.sh
+bash ~/gestor_proyectos.sh
+rm -f ~/gestor_proyectos.sh
+nano ~/gestor_proyectos.sh
+bash ~/gestor_proyectos.sh
+rm -f ~/gestor_proyectos.sh
+nano ~/gestor_proyectos.sh
+bash ~/gestor_proyectos.sh
+rm -f ~/gestor_proyectos.sh
+nano ~/gestor_proyectos.sh
+bash ~/gestor_proyectos.sh
+rm -f ~/gestor_proyectos.sh
+nano ~/gestor_proyectos.sh
+bash ~/gestor_proyectos.sh
+rm -f ~/gestor_proyectos.sh
+nano ~/gestor_proyectos.sh
+bash ~/gestor_proyectos.sh
+2
+rm -f ~/gestor_proyectos.sh
+nano ~/gestor_proyectos.sh
+bash ~/gestor_proyectos.sh
+./main.sh
+ls -l ~/proyectos/gestor_de_tokens
+bash ~/proyectos/gestor_de_tokens/main.sh
+rm -rf ~/proyectos/gestor_de_tokens
+nano ~/gestor_proyectos.sh
+rm -rf ~/proyectos/gestor_de_tokens
+nano ~/gestor_proyectos.sh
+rm -f ~/gestor_proyectos.sh
+bash ~/proyectos/gestor_de_tokens/main.sh
+rm -f ~/gestor_proyectos.sh
+rm -rf ~/proyectos/gestor_de_tokens
+nano ~/gestor_proyectos.sh
+bash ~/gestor_proyectos.sh
+rm -rf ~/proyectos/gestor_de_tokens
+nano ~/gestor_proyectos.sh
+rm -f ~/gestor_proyectos.sh
+nano ~/gestor_proyectos.sh
+bash ~/gestor_proyectos.sh
+rm -f ~/gestor_proyectos.sh
+nano ~/gestor_proyectos.sh
+bash ~/gestor_proyectos.sh
+rm -f ~/gestor_proyectos.sh
+nano ~/gestor_proyectos.sh
+bash ~/gestor_proyectos.sh
+rm -f ~/gestor_proyectos.sh
+nano ~/gestor_proyectos.sh
+chmod +x gestor_proyectos.sh
+./gestor_proyectos.sh
+rm -f ~/gestor_proyectos.sh
+nano ~/gestor_proyectos.sh
+chmod +x gestor_proyectos.sh
+./gestor_proyectos.sh
+rm -f ~/gestor_proyectos.sh
+nano ~/gestor_proyectos.sh
+chmod +x gestor_proyectos.sh
+bash ~/gestor_proyectos.sh
+rm -f ~/gestor_proyectos.sh
+nano ~/gestor_proyectos.sh
+chmod +x gestor_proyectos.sh
+bash ~/gestor_proyectos.sh
+rm -f ~/gestor_proyectos.sh
+nano ~/gestor_proyectos.sh
+chmod +x gestor_proyectos.sh
+bash ~/gestor_proyectos.sh
+rm -f ~/gestor_proyectos.sh
+nano ~/gestor_proyectos.sh
+chmod +x gestor_proyectos.sh
+bash ~/gestor_proyectos.sh
+rm -f ~/gestor_proyectos.sh
+nano ~/gestor_proyectos.sh
+bash ~/gestor_proyectos.sh
+rm -f ~/gestor_proyectos.sh
+nano ~/gestor_proyectos.sh
+chmod +x gestor_proyectos.sh
+bash ~/gestor_proyectos.sh
+
+
+chmod +x gestor_proyectos.sh
+bash ~/gestor_proyectos.sh777
+rm -f ~/gestor_proyectos.sh
+nano ~/gestor_proyectos.sh
+chmod +x gestor_proyectos.sh
+./gestor_proyectos.sh
+rm -f ~/gestor_proyectos.sh
+nano ~/gestor_proyectos.sh
+bash ~/gestor_proyectos.sh
+rm -f ~/gestor_proyectos.sh
+nano ~/gestor_proyectos.sh
+bash ~/gestor_proyectos.sh
+rm -f ~/gestor_proyectos.sh
+nano ~/gestor_proyectos.sh
+bash ~/gestor_proyectos.sh
 #!/bin/bash
-# Archivo donde se guardan los usuarios (email:contraseña)
-USER_FILE="users.txt"
-# Función para iniciar sesión
-login() {     echo "🔑 Iniciar sesión";     read -p "Email: " email;     read -s -p "Contraseña: " password;     echo; 
-    if grep -q "^$email:$password$" "$USER_FILE"; then         echo "✅ Inicio de sesión exitoso. Bienvenido, $email!";     else         echo "❌ Error: Email o contraseña incorrectos.";         exit 1;     fi; }
-# Llamar a la función
-login
-chmod +x instalar_xmrig.sh
-#!/bin/bash
-echo "🚀 Iniciando instalación de XMRig en Termux..."
-# 🛠️ 1. Instalar dependencias necesarias
-echo "📦 Instalando dependencias..."
-pkg update -y && pkg upgrade -y
-pkg install -y git cmake make clang curl tar
-# 🔽 2. Descargar XMRig
-echo "📂 Descargando XMRig..."
-cd $HOME
-rm -rf xmrig
-git clone https://github.com/xmrig/xmrig.git || { echo "❌ Error: No se pudo descargar XMRig"; exit 1; }
-curl -L -o xmrig.tar.gz https://github.com/xmrig/xmrig/archive/refs/heads/master.tar.gz
-tar -xvf xmrig.tar.gz
-mv xmrig-master xmrig
-cd xmrig
+# Ruta del gestor de proyectos
+GESTOR="$HOME/gestor_proyectos.sh"
+LOG_ERRORES="$HOME/.errores_gestor"
+CONFIG_GLOBAL="$HOME/.config_gestor"
+# Función para corregir errores automáticamente
+corregir_errores() {     ERROR="$1";      case "$ERROR" in         *"command not found"*)             echo "🔴 Error: Comando no encontrado. Verificando permisos...";             chmod +x "$GESTOR";             ;;         *"No such file or directory"*)             echo "🔴 Error: Archivo no encontrado. Restaurando configuración...";             touch "$CONFIG_GLOBAL";             echo "DIR_PROYECTOS=$HOME/proyectos" > "$CONFIG_GLOBAL";             echo "PERMISOS_DEFECTO=755" >> "$CONFIG_GLOBAL";             ;;         *"Permission denied"*)             echo "🔴 Error: Permiso denegado. Asignando permisos...";             chmod +x "$GESTOR";             ;;         *"No projects found"*)             echo "🔴 Error: No hay proyectos. Creando uno de prueba...";             mkdir -p "$HOME/proyectos/prueba";             touch "$HOME/proyectos/prueba/main.sh";             chmod +x "$HOME/proyectos/prueba/main.sh";             ;;         *)             echo "⚠️ Error desconocido. Se recomienda revisión manual.";             ;;     esac; }
+# Bucle hasta que el gestor funcione sin errores
+while true; do     echo "🚀 Ejecutando el Gestor de Proyectos...";     OUTPUT=$("$GESTOR" 2>&1);      if echo "$OUTPUT" | grep -qi "error"; then         echo "🔴 Se detectó un error. Intentando corregir...";         echo "$OUTPUT" >> "$LOG_ERRORES";         corregir_errores "$OUTPUT";         sleep 2  # Pausa para aplicar cambios antes de reintentar
+    else         echo "✅ El gestor se ejecutó sin errores. ¡Todo funciona bien!";         break;     fi; done
+nano gestor_auto.sh
+chmod +x gestor_auto.sh
+./gestor_auto.sh
+bash ~/gestor_proyectos.sh
+rm -f ~/gestor_proyectos.sh
+bash fix_gestor.sh
+nano $HOME/corregir_gestor.sh
+chmod +x $HOME/corregir_gestor.sh
+bash $HOME/corregir_gestor.sh
+nano $HOME/gestor_proyectos.sh
+chmod +x $HOME/gestor_proyectos.sh
+bash $HOME/corregir_gestor.sh
+nano $HOME/corregir_gestor.sh
+chmod +x $HOME/corregir_gestor.sh
+bash $HOME/corregir_gestor.sh
+bash autodiagnostico.sh
+nano autodiagnostico.sh
+chmod +x autodiagnostico.sh
+bash autodiagnostico.sh
+nano autodiagnostico.sh
+chmod +x autodiagnostico.sh
+bash autodiagnostico.sh
+rm -f gestor_autofix.sh
+nano gestor_autofix.sh
+chmod +x gestor_autofix.sh
+./gestor_autofix.sh
+rm -f gestor_autofix.sh
+nano gestor_autofix.sh
+chmod +x gestor_autofix.sh
+./gestor_autofix.sh
+rm -f gestor_autofix.sh
+nano gestor_autofix.sh
+chmod +x gestor_autofix.sh
+./gestor_autofix.sh
+rm -f gestor_autofix.sh
+nano gestor_autofix.sh
+chmod +x gestor_autofix.sh
+./gestor_autofix.sh
+bash gestor_proyectos.sh
+rm -f ~/gestor_proyectos.sh
+nano gestor_proyectos.sh
+chmod +x gestor_proyectos.sh
+./gestor_proyectos.sh
+rm -f ~/gestor_proyectos.sh
+nano gestor_proyectos.sh
+chmod +x gestor_proyectos.sh
+bash gestor_proyectos.sh
+rm -f ~/gestor_proyectos.sh
+nano gestor_proyectos.sh
+bash gestor_proyectos.sh
+rm -f ~/gestor_proyectos.sh
+nano gestor_proyectos.sh
+chmod +x gestor_proyectos.sh
+bash gestor_proyectos.sh
+rm -f ~/gestor_proyectos.sh
+nano gestor_proyectos.sh
+bash gestor_proyectos.sh
+rm -f ~/gestor_proyectos.sh
+nano gestor_proyectos.sh
+chmod +x gestor_proyectos.sh
+bash gestor_proyectos.sh
+rm -f ~/gestor_proyectos.sh
+nano gestor_proyectos.sh
+chmod +x gestor_proyectos.sh
+bash gestor_proyectos.sh
+chmod +x gestor_proyectos.sh
+bash gestor_proyectos.sh
+read -p "Prueba de entrada: " prueba; echo "Ingresaste: $prueba"
+rm -rf ~/gestor_proyectos.sh
+nano gestor_proyectos.sh
+chmod +x gestor_proyectos.sh
+./gestor_proyectos.sh
+rm -rf gestor_proyectos.sh
+nano gestor_proyectos.sh
+chmod +x gestor_proyectos.sh
+./gestor_proyectos.sh
+rm -rf gestor_proyectos.sh
+nano gestor_proyectos.sh
+chmod +x gestor_proyectos.sh
+bash gestor_proyectos.sh
+rm -rf gestor_proyectos.sh
+nano gestor_proyectos.sh
+chmod +x gestor_proyectos.sh
+bash gestor_proyectos.sh
+rm -rf gestor_proyectos.sh
+nano gestor_proyectos.sh
+chmod +x gestor_proyectos.sh
+./gestor_proyectos.sh
+rm -rf gestor_proyectos.sh
+nano gestor_proyectos.sh
+chmod +x gestor_proyectos.sh
+bash gestor_proyectos.sh
+nano datos.env
+EMAIL="usuario@example.com"
+USUARIO="mi_usuario"
+CONTRASEÑA="mi_contraseña_segura"
+API_KEY="clave_secreta"
+rm -rf gestor_proyectos.sh
+nano gestor_proyectos.sh
+bash gestor_proyectos.sh
 pkg update && pkg upgrade -y
-pkg install git cmake clang make libuv openssl curl -y
-cd ~/xmrig
-mkdir -p build && cd build
-cmake ..
-pkg install hwloc-static -y
-pkg install git autoconf automake libtool -y
-cd $HOME
-git clone https://github.com/open-mpi/hwloc.git
-cd hwloc
-bash instalar_hwloc.sh
-#!/bin/bash
-echo "⚙️ Configurando Git para evitar errores de transferencia..."
-git config --global http.postBuffer 524288000
-git config --global http.lowSpeedLimit 0
-git config --global http.lowSpeedTime 999999
-git config --global fetch.fsckObjects false
-git config --global receive.fsckObjects false
-git config --global http.followRedirects true
-echo "🔄 Actualizando paquetes en Termux..."
-pkg update -y && pkg upgrade -y
-echo "📦 Instalando dependencias necesarias..."
-pkg install -y git autoconf automake libtool curl cmake clang make
-echo "🔄 Intentando clonar hwloc desde GitHub..."
-if git clone --depth=1 https://github.com/open-mpi/hwloc.git; then     cd hwloc || exit; else     echo "⚠️ Falló la clonación, descargando versión comprimida...";     curl -LO https://download.open-mpi.org/release/hwloc/v2.9/hwloc-2.9.2.tar.gz;     tar -xvzf hwloc-2.9.2.tar.gz;     cd hwloc-2.9.2 || exit; fi
-echo "⚙️ Compilando e instalando hwloc..."
-./autogen.sh
-./configure
-make -j$(nproc)
-make install
-echo "✅ hwloc instalado correctamente."
-cd
-#!/bin/bash
-set -e  # Detiene el script si hay errores
-echo "⚙️ Configurando Git para evitar errores..."
-git config --global http.postBuffer 524288000
-git config --global http.lowSpeedLimit 0
-git config --global http.lowSpeedTime 999999
-echo "🔄 Actualizando paquetes en Termux..."
-pkg update -y && pkg upgrade -y
-echo "📦 Instalando dependencias necesarias..."
-pkg install -y git autoconf automake libtool curl cmake clang make
-# Eliminamos posibles instalaciones fallidas
-rm -rf hwloc hwloc-2.9.2
-echo "🔄 Clonando hwloc desde GitHub..."
-if git clone --depth=1 https://github.com/open-mpi/hwloc.git; then     cd hwloc || exit; else     echo "⚠️ Falló la clonación, intentando descargar el código fuente...";     curl -LO https://download.open-mpi.org/release/hwloc/v2.9/hwloc-2.9.2.tar.gz;     tar -xvzf hwloc-2.9.2.tar.gz;     cd hwloc-2.9.2 || exit; fi
-echo "⚙️ Configurando hwloc para la compilación..."
-if ! ./autogen.sh; then     echo "❌ Error en autogen.sh";     exit 1; fi
-if ! ./configure --disable-libxml2; then     echo "❌ Error en configure";     exit 1; fi
+pkg install python -y
+pip install cryptography
+pkg install nano -y  # Editor de texto para editar archivos
+nano instalar_cryptography.sh
+chmod +x instalar_cryptography.sh
+./instalar_cryptography.sh
+# 1️⃣ Actualizar paquetes
+pkg update && pkg upgrade -y
+# 2️⃣ Instalar Python y herramientas necesarias
+pkg install python clang libffi openssl rust -y
+# 3️⃣ Configurar variables de entorno para Rust (si no se reconocen los comandos)
+export CARGO_HOME=$HOME/.cargo
+export PATH=$CARGO_HOME/bin:$PATH
+# 4️⃣ Instalar cryptography usando pip sin PEP 517
+pip install --upgrade setuptools wheel
+pip install cryptography
+python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key())"
+nano setup.sh
+chmod +x setup.sh
+./setup.sh
+python gestor_proyectos.py
+nano llenar_info.sh
+chmod +x llenar_info.sh
+./llenar_info.sh
+pkg update && pkg install whiptail -y
+./llenar_info.sh
+pkg update && pkg upgrade -y
+pkg install nano openssl git -y
+nano gestor_proyectos.sh
+chmod +x gestor_proyectos.sh
+./gestor_proyectos.sh
+rm -rf ~/gestor_proyectos.sh ~/proyectos
+nano gestor_proyectos.sh
+chmod +x gestor_proyectos.sh
+./gestor_proyectos.sh
+rm -f gestor_proyectos.sh
+touch gestor_proyectos.sh
+nano gestor_proyectos.sh
+chmod +x gestor_proyectos.sh
+./gestor_proyectos.sh
+rm -f gestor_proyectos.sh
+nano gestor_proyectos.sh
+chmod +x gestor_proyectos.sh
+./gestor_proyectos.sh
+nano prueba_gestor.sh
+chmod +x prueba_gestor.sh
+./prueba_gestor.sh
+exit
+0
+./gestor_proyectos.sh
+rm -f gestor_proyectos.sh
+nano gestor_proyectos.sh
+chmod +x gestor_proyectos.sh
+./gestor_proyectos.sh
+rm -f gestor_proyectos.sh
+nano gestor_proyectos.sh
+chmod +x gestor_proyectos.sh
+./gestor_proyectos.sh
+rm -f gestor_proyectos.sh
+nano gestor_proyectos.sh
+chmod +x gestor_proyectos.sh
+./gestor_proyectos.sh
+rm -f gestor_proyectos.sh
+nano gestor_proyectos.sh
+chmod +x gestor_proyectos.sh
+./gestor_proyectos.sh
+rm -f gestor_proyectos.sh
+nano gestor_proyectos.sh
+chmod +x gestor_proyectos.sh
+./gestor_proyectos.sh
+rm -f gestor_proyectos.sh
+nano gestor_proyectos.sh
+chmod +x gestor_proyectos.sh
+./gestor_proyectos.sh
+exit

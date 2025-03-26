@@ -1,0 +1,131 @@
+#!/bin/bash
+
+# Archivo de configuración
+CONFIG_FILE="$HOME/gestor_de_tokens/config.txt"
+HISTORIAL_FILE="$HOME/gestor_de_tokens/historial.txt"
+
+# Función para cargar configuración desde el Gestor de Proyectos
+cargar_configuracion() {
+    if [ -f "$CONFIG_FILE" ]; then
+        source "$CONFIG_FILE"
+    else
+        echo "⚠ No se encontró la configuración. Configura tu cuenta en el Gestor de Proyectos."
+        exit 1
+    fi
+}
+
+# Función para mostrar el menú principal
+mostrar_menu() {
+    clear
+    echo "=============================="
+    echo "  🎟️ Gestor de Tokens"
+    echo "=============================="
+    echo "📌 Usuario: $USUARIO"
+    echo "1️⃣ Registrarse"
+    echo "2️⃣ Iniciar sesión"
+    echo "3️⃣ Ver tokens"
+    echo "4️⃣ Convertir tokens a USDT"
+    echo "5️⃣ Historial de transacciones"
+    echo "6️⃣ Salir"
+    echo "=============================="
+    echo "Seleccione una opción:"
+}
+
+# Función para registrar un usuario
+registrarse() {
+    read -p "📧 Ingrese su correo: " USUARIO
+    echo "USUARIO=$USUARIO" > "$CONFIG_FILE"
+    echo "✔ Registro exitoso. Ahora puede iniciar sesión."
+}
+
+# Función para iniciar sesión
+iniciar_sesion() {
+    if [ -f "$CONFIG_FILE" ]; then
+        source "$CONFIG_FILE"
+        echo "🔓 Sesión iniciada como $USUARIO"
+    else
+        echo "⚠ No se encontró un usuario registrado. Regístrese primero."
+    fi
+}
+
+# Función para ver tokens (contador en tiempo real)
+ver_tokens() {
+    clear
+    echo "=============================="
+    echo "  Contador de Tokens"
+    echo "=============================="
+    echo "📌 Usuario: $USUARIO"
+    TOKENS=100  # Simulación de tokens iniciales
+
+    while true; do
+        echo -ne "⏳ Tokens actuales: $TOKENS \r"
+        TOKENS=$((TOKENS + 1))  # Incremento automático
+        sleep 1
+
+        # Permitir salir escribiendo "volver"
+        read -t 0.1 entrada
+        if [[ $entrada == "volver" ]]; then
+            break
+        fi
+    done
+}
+
+# Función para convertir tokens a USDT
+convertir_tokens() {
+    clear
+    echo "=============================="
+    echo "  Conversión de Tokens a USDT"
+    echo "=============================="
+    echo "📌 Usuario: $USUARIO"
+
+    TOKENS=500  # Simulación de tokens disponibles
+    TASA_USDT=0.018
+    USDT=$(echo "$TOKENS * $TASA_USDT" | bc)
+
+    echo "💰 Tokens actuales: $TOKENS"
+    echo "🔄 Tasa actual: 1 Token = $TASA_USDT USDT"
+    echo "💵 USDT recibidos: $USDT"
+    read -p "❓ ¿Deseas continuar? (Sí / No): " CONFIRMAR
+
+    if [[ "$CONFIRMAR" =~ ^[Ss]í$ ]]; then
+        echo "$(date) | 🔄 $TOKENS Tokens → 💵 $USDT USDT" >> "$HISTORIAL_FILE"
+        echo "✔ Conversión exitosa."
+    else
+        echo "❌ Operación cancelada."
+    fi
+}
+
+# Función para mostrar el historial de transacciones
+historial_transacciones() {
+    clear
+    echo "=============================="
+    echo "  Historial de Transacciones"
+    echo "=============================="
+    echo "📌 Usuario: $USUARIO"
+
+    if [ -f "$HISTORIAL_FILE" ]; then
+        cat "$HISTORIAL_FILE"
+    else
+        echo "📂 No hay transacciones registradas."
+    fi
+}
+
+# Cargar configuración y mostrar menú
+cargar_configuracion
+
+while true; do
+    mostrar_menu
+    read -p "> " OPCION
+
+    case $OPCION in
+        1) registrarse ;;
+        2) iniciar_sesion ;;
+        3) ver_tokens ;;
+        4) convertir_tokens ;;
+        5) historial_transacciones ;;
+        6) echo "👋 Saliendo..."; exit ;;
+        *) echo "❌ Opción no válida." ;;
+    esac
+
+    read -p "Presione Enter para continuar..."
+done
